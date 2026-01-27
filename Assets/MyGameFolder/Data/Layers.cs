@@ -8,4 +8,5 @@ public const string Water = "Water";
 public const string UI = "UI";
 public const string Player = "Player";
 public const string GrabObject = "GrabObject";
+public const string Enemy = "Enemy";
 }

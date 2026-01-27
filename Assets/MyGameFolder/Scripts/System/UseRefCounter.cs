@@ -9,6 +9,8 @@ public sealed class UseRefCounter
     public event Action OnUse;
     public event Action OnReleased;
 
+    public bool IsUsed => Count > 0;
+
     public IDisposable Use()
     {
         Interlocked.Increment(ref m_count);

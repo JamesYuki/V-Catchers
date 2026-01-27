@@ -179,3 +179,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 368ff0e79393286419a2f84c68378287, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InGame.Gimmick.Box
+  m_MaxHP: 3
+  m_DamageVelocityThreshold: 10
+  m_Velocity: {x: 0, y: 0, z: 0}
+  IsGrabed: 0
+  m_SpawnerGimmickPrefab: {fileID: 8032386224056101293, guid: dd1cb8f045f786146a67096438ed0849, type: 3}
+  m_SpawnCount: 12
+  m_SpawnForce: 1

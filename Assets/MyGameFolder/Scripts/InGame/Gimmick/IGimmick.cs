@@ -10,10 +10,14 @@ namespace InGame.Gimmick
         void Deactivate();
     }
 
-    public interface IGrabable
+    public interface IGrabbable
     {
         Vector3 GetGrapplePoint();
-        void Grap(PlayerController player);
+        void GrapStart(object grabber);
+        void Grap(object grabber);
+        void GrapEnd(object grabber);
+        Vector3 Velocity { get; set; }
+        bool IsGrabed { get; set; }
     }
 
     public interface IDamageable

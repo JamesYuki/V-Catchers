@@ -12,15 +12,9 @@ namespace InGame.Player
         [SerializeField, Header("ジャンプ力")]
         private float m_JumpForce = 10f;
 
-        [SerializeField, Header("地面判定距離")]
-        private float m_GroundCheckDistance = 0.2f;
-
-        [SerializeField, Header("地面レイヤー")]
-        private LayerMask m_GroundLayer;
-
         [Header("接地判定設定")]
-        public Transform m_GroundCheck;
-        private bool m_IsGrounded = false;
+        [SerializeField]
+        private GroundChecker m_GroundChecker;
         private float m_MoveInput = 0f;
 
         public void Setup(PlayerController playerController)
@@ -38,9 +32,7 @@ namespace InGame.Player
         {
             m_MoveInput = m_PlayerInputModule.GetMove().x;
 
-            m_IsGrounded = Physics2D.OverlapCircle(m_GroundCheck.position, m_GroundCheckDistance, m_GroundLayer);
-
-            if (m_PlayerInputModule.GetJump() && m_IsGrounded)
+            if (m_PlayerInputModule.GetJump() && m_GroundChecker != null && m_GroundChecker.IsGrounded)
             {
                 m_Rigidbody2D.AddForce(Vector2.up * m_JumpForce, ForceMode2D.Impulse);
             }

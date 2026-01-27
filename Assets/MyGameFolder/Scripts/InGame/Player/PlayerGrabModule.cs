@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using InGame.Gimmick;
 
@@ -8,7 +9,7 @@ namespace InGame.Player
         private PlayerController m_PlayerController;
         private PlayerInputModule m_PlayerInputModule;
         private Vector2? m_DragPosition = null;
-        private IGrabable m_CurrentGrabTarget = null;
+        private IGrabbable m_CurrentGrabTarget = null;
         private TargetJoint2D m_CurrentTargetJoint = null;
         private Vector2 m_TargetOffset = Vector2.zero;
         private LineRenderer m_ConnectLine = null;
@@ -16,15 +17,23 @@ namespace InGame.Player
         private bool m_IsDragging = false;
         private Vector2? m_LastDragPosition = null; // 前フレームのドラッグ座標
 
-        [SerializeField]
+        [SerializeField, Header("掴み判定の最大距離（プレイヤーからの距離）")]
         private float m_GrabRange = 5f;
 
+        [SerializeField, Header("スラム時の下向き初速（叩きつけ時の初期速度）")]
+        private float m_SlamVelocity = 20f;
 
-        [SerializeField, Header("叩きつけパワー")]
+        [SerializeField, Header("叩きつけパワー（AddForceの強さ）")]
         private float m_SlamPower = 30f;
 
-        [SerializeField, Header("放物線の高さ(なだらかさ)")]
+        [SerializeField, Header("掴み時の放物線の高さ（なだらかさ）")]
         private float m_ParabolaHeight = 2.5f;
+        [SerializeField, Header("スワイプ勢い倍率（delta.y × 倍率）")]
+        private float m_SwipeIntensityMultiplier = 2f;
+        [SerializeField, Header("スワイプ勢いの最小値")]
+        private float m_SwipeIntensityMin = 1f;
+        [SerializeField, Header("スワイプ勢いの最大値")]
+        private float m_SwipeIntensityMax = 5f;
         public void Setup(PlayerController playerController)
         {
             m_PlayerController = playerController;
@@ -53,9 +62,10 @@ namespace InGame.Player
                     Collider2D hit = Physics2D.OverlapPoint(point);
                     if (hit != null)
                     {
-                        var grabable = hit.GetComponent<IGrabable>();
+                        var grabable = hit.GetComponent<IGrabbable>();
                         if (grabable != null)
                         {
+                            grabable.GrapStart(m_PlayerController);
                             float distance = Vector2.Distance(m_PlayerController.transform.position, hit.transform.position);
                             if (distance <= m_GrabRange && hit.transform.position.y > m_PlayerController.transform.position.y)
                             {
@@ -67,10 +77,6 @@ namespace InGame.Player
                                 if (targetMono != null)
                                 {
                                     var rb = targetMono.GetComponent<Rigidbody2D>();
-                                    // レイヤー変更: 掴み開始時にGrabObjectレイヤーに
-                                    m_OriginalLayer = targetMono.gameObject.layer;
-                                    int grabLayer = LayerMask.NameToLayer(Layers.GrabObject);
-                                    if (grabLayer >= 0) targetMono.gameObject.layer = grabLayer;
                                     if (rb != null)
                                     {
                                         m_CurrentTargetJoint = targetMono.GetComponent<TargetJoint2D>();
@@ -81,14 +87,15 @@ namespace InGame.Player
                                         // 掴み開始時のプレイヤーと対象の相対位置を記録
                                         m_TargetOffset = rb.position - (Vector2)m_PlayerController.transform.position;
                                         m_CurrentTargetJoint.target = m_PlayerController.transform.position + (Vector3)m_TargetOffset;
-                                        m_CurrentTargetJoint.maxForce = 1000f; // 必要に応じて調整
-                                        m_CurrentTargetJoint.frequency = 2.0f; // REPOらしさ調整
+                                        m_CurrentTargetJoint.maxForce = 1000f;
+                                        m_CurrentTargetJoint.frequency = 2.0f;
                                         m_CurrentTargetJoint.dampingRatio = 0.7f;
                                     }
                                 }
                             }
                             else
                             {
+                                m_CurrentGrabTarget.GrapEnd(m_PlayerController);
                                 m_CurrentGrabTarget = null;
                             }
                         }
@@ -117,12 +124,12 @@ namespace InGame.Player
                 var boxRelease = m_CurrentGrabTarget as InGame.Gimmick.Box;
                 if (boxRelease != null) boxRelease.IsGrabed = false;
                 // レイヤーを元に戻す
-                var targetMonoRelease2 = m_CurrentGrabTarget as MonoBehaviour;
-                if (targetMonoRelease2 != null && m_OriginalLayer >= 0)
+                // GimmickBaseのRestoreLayerで元に戻す
+                var gimmickRelease = m_CurrentGrabTarget as InGame.Gimmick.GimmickBase;
+                if (gimmickRelease != null)
                 {
-                    targetMonoRelease2.gameObject.layer = m_OriginalLayer;
+                    gimmickRelease.RestoreLayer();
                 }
-                m_OriginalLayer = -1;
                 m_CurrentGrabTarget = null;
             }
         }
@@ -146,10 +153,15 @@ namespace InGame.Player
                         if (rb != null)
                         {
                             // 勢いを出すために、より強い下方向への初速とマウスのスワイプ速度に応じた追加の力を与える
-                            float swipeIntensity = Mathf.Clamp(Mathf.Abs(delta.y) * 2f, 1f, 5f);
-                            rb.linearVelocity = new Vector2(rb.linearVelocity.x, -20f);
+                            float swipeIntensity = Mathf.Clamp(Mathf.Abs(delta.y) * m_SwipeIntensityMultiplier, m_SwipeIntensityMin, m_SwipeIntensityMax);
+                            rb.linearVelocity = new Vector2(rb.linearVelocity.x, -m_SlamVelocity);
                             rb.AddForce(Vector2.down * m_SlamPower * swipeIntensity, ForceMode2D.Impulse);
                             AppLogger.Log("Applied slam force: " + rb.linearVelocity.y);
+                            // IGrabableのVelocityプロパティにrbの速度をセット
+                            if (m_CurrentGrabTarget != null)
+                            {
+                                m_CurrentGrabTarget.Velocity = rb.linearVelocity;
+                            }
                         }
                     }
                 }
@@ -158,6 +170,19 @@ namespace InGame.Player
             // ドラッグ中はマウスの位置で掴んだ物体を動かす
             if (m_CurrentTargetJoint != null && m_IsDragging && m_DragPosition.HasValue)
             {
+                // 掴み中は毎フレーム速度を更新
+                if (m_CurrentGrabTarget != null)
+                {
+                    var targetMono = m_CurrentGrabTarget as MonoBehaviour;
+                    if (targetMono != null)
+                    {
+                        var rb = targetMono.GetComponent<Rigidbody2D>();
+                        if (rb != null)
+                        {
+                            m_CurrentGrabTarget.Velocity = rb.linearVelocity;
+                        }
+                    }
+                }
                 Vector2 playerPos = m_PlayerController.transform.position;
                 Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(new Vector3(m_DragPosition.Value.x, m_DragPosition.Value.y, 0f));
                 Vector2 handPos = new Vector2(mouseWorld.x, mouseWorld.y);

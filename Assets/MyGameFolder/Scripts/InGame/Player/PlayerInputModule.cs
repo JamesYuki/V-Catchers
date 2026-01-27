@@ -114,8 +114,6 @@ namespace InGame.Player
         {
             hitObject = null;
 
-            AppLogger.Log("GetClickedObject2D Called" + Mouse.current.leftButton.wasPressedThisFrame);
-
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
                 Vector2 mousePos = Mouse.current.position.ReadValue();
