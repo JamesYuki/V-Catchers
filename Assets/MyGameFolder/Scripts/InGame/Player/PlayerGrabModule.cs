@@ -95,7 +95,7 @@ namespace InGame.Player
                             }
                             else
                             {
-                                m_CurrentGrabTarget.GrapEnd(m_PlayerController);
+                                m_CurrentGrabTarget?.GrapEnd(m_PlayerController);
                                 m_CurrentGrabTarget = null;
                             }
                         }

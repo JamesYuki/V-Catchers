@@ -13,11 +13,14 @@ namespace MyGame.InGame.Enemy
         private float m_SearchRadius = 10f; // 箱探索用
         [SerializeField]
         private float m_PlayerSearchRadius = 10f; // プレイヤー探索用
-        [SerializeField]
-        private float m_ThrowForce = 15f;
+        [SerializeField, Tooltip("投げる速度の倍率")]
+        private float m_ThrowSpeed = 1f;
 
-        [SerializeField]
+        [SerializeField, Tooltip("持ち上げる高さ")]
         private float m_LiftHeight = 2f;
+
+        [SerializeField, Tooltip("投げる山なりの高さ（放物線の頂点高さ）")]
+        private float m_ThrowArcHeight = 3f;
         [SerializeField]
         private float m_LiftTime = 1.0f;
         private Transform m_PlayerTransform;
@@ -41,11 +44,9 @@ namespace MyGame.InGame.Enemy
                 // 軌道予測を可視化
                 Vector3 liftPos = m_Enemy.transform.position + new Vector3(0, m_LiftHeight, 0);
                 Vector3 targetPos = m_PlayerTransform != null ? m_PlayerTransform.position : liftPos + Vector3.right * 5f;
-                Vector2 throwDir = ((Vector2)targetPos - (Vector2)liftPos).normalized;
-                float throwPower = m_ThrowForce;
-                Vector2 velocity = throwDir * throwPower;
+                Vector2 velocity = CalculateParabola2D(liftPos, targetPos, m_ThrowArcHeight, Physics2D.gravity.y) * m_ThrowSpeed;
                 float timeStep = 0.05f;
-                int steps = 60;
+                int steps = 80;
                 Vector3 prev = liftPos;
                 for (int i = 1; i <= steps; i++)
                 {
@@ -54,9 +55,11 @@ namespace MyGame.InGame.Enemy
                     Gizmos.color = Color.red;
                     Gizmos.DrawLine(prev, next);
                     prev = next;
+                    // ターゲットより下に行ったら止める
+                    if (next.y < targetPos.y - 1f) break;
                 }
-                Gizmos.color = Color.red;
-                Gizmos.DrawSphere(prev, 0.15f);
+                Gizmos.color = Color.green;
+                Gizmos.DrawSphere(targetPos, 0.2f);
             }
             else if (transform != null)
             {
@@ -65,11 +68,11 @@ namespace MyGame.InGame.Enemy
             }
         }
 
-        public EnemyThrowModule(Transform player, float searchRadius = 10f, float throwForce = 15f, float playerSearchRadius = 10f)
+        public EnemyThrowModule(Transform player, float searchRadius = 10f, float throwSpeed = 1f, float playerSearchRadius = 10f)
         {
             this.m_PlayerTransform = player;
             this.m_SearchRadius = searchRadius;
-            this.m_ThrowForce = throwForce;
+            this.m_ThrowSpeed = throwSpeed;
             this.m_PlayerSearchRadius = playerSearchRadius;
         }
 
@@ -162,12 +165,11 @@ namespace MyGame.InGame.Enemy
             await UniTask.WaitForSeconds(m_LiftTime);
 
             // 2. プレイヤー位置まで放物線で届く初速を計算
-            float height = m_LiftHeight; // 山なり度
             Vector2 start = liftPos;
             Vector2 end = m_PlayerTransform.position;
-            Vector2 velocity = CalculateParabola2D(start, end, height, Physics2D.gravity.y) * m_ThrowForce;
-            Debug.Log($"[EnemyThrowModule] Throwing {obj.name} from {liftPos} to {end} with velocity {velocity} (AddForce: {velocity * rb2d.mass})");
-            rb2d.AddForce(velocity * rb2d.mass, ForceMode2D.Impulse);
+            Vector2 velocity = CalculateParabola2D(start, end, m_ThrowArcHeight, -9.81f) * m_ThrowSpeed;
+            Debug.Log($"[EnemyThrowModule] Throwing {obj.name} from {start} to {end} with velocity {velocity}");
+            rb2d.linearVelocity = velocity; // 直接velocityをセット（より正確な放物線）
 
             await UniTask.Delay(250); // 少し待つ
 
@@ -178,20 +180,31 @@ namespace MyGame.InGame.Enemy
             m_NextCanThrowTime = Time.time + m_ThrowCooldown;
         }
 
-        // 2D放物線の初速計算
-        private Vector2 CalculateParabola2D(Vector2 start, Vector2 end, float height, float gravity)
+        /// <summary>
+        /// 2D放物線の初速を計算する
+        /// </summary>
+        /// <param name="start">開始位置</param>
+        /// <param name="end">目標位置</param>
+        /// <param name="arcHeight">放物線の頂点高さ（startからの相対高さ）</param>
+        /// <param name="gravity">重力（負の値）</param>
+        /// <returns>初速ベクトル</returns>
+        private Vector2 CalculateParabola2D(Vector2 start, Vector2 end, float arcHeight, float gravity)
         {
             Vector2 displacement = end - start;
-            float displacementY = displacement.y;
-            float displacementX = displacement.x;
-            float peakHeight = Mathf.Max(height, 0.1f);
-            float g = gravity;
-            float timeUp = Mathf.Sqrt(2 * peakHeight / -g);
-            float timeDown = Mathf.Sqrt(2 * Mathf.Max(displacementY - peakHeight, 0.1f) / -g);
-            float totalTime = timeUp + timeDown;
-            float velocityY = timeUp * -g;
-            float velocityX = displacementX / totalTime;
-            return new Vector2(velocityX, velocityY);
+            float dx = displacement.x;
+            float dy = displacement.y;
+            float h = Mathf.Max(arcHeight, Mathf.Max(dy, 0) + 0.5f);
+            float g = Mathf.Abs(gravity);
+            float tUp = Mathf.Sqrt(2f * h / g);
+            float fallHeight = h - dy;
+            float tDown = Mathf.Sqrt(2f * Mathf.Max(fallHeight, 0.01f) / g);
+            float totalTime = tUp + tDown;
+
+            // 初速計算
+            float vy = Mathf.Sqrt(2f * g * h); // 上向き初速
+            float vx = dx / totalTime;
+
+            return new Vector2(vx, vy);
         }
     }
 }
