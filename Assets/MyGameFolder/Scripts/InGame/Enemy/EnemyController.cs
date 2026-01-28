@@ -1,37 +1,25 @@
 using UnityEngine;
+using InGame.Entity;
 
-namespace MyGame.InGame.Enemy
+namespace InGame.Enemy
 {
-    public class EnemyController : EnemyBase
+    public class EnemyController : EntityController
     {
-        private IEnemyModule[] m_EnemyModules;
-
-        protected override void Awake()
-        {
-            base.Awake();
-            m_EnemyModules = GetComponents<IEnemyModule>();
-            foreach (var module in m_EnemyModules)
-            {
-                AddModule(module);
-            }
-        }
-
-        protected override void Update()
-        {
-            base.Update();
-        }
-
-        public void GetModule<T>(out T module) where T : class, IEnemyModule
+        /// <summary>
+        /// 特定の型のEnemyモジュールを取得
+        /// </summary>
+        public bool TryGetEnemyModule<T>(out T module) where T : class, IEnemyModule
         {
             module = null;
-            foreach (var m in m_EnemyModules)
+            foreach (var m in m_Modules)
             {
                 if (m is T matchedModule)
                 {
                     module = matchedModule;
-                    return;
+                    return true;
                 }
             }
+            return false;
         }
     }
 }

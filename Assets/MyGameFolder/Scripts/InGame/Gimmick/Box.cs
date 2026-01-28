@@ -14,19 +14,15 @@ namespace InGame.Gimmick
         [SerializeField]
         private float m_DamageVelocityThreshold = 10f;
 
-        [SerializeField]
-        private Vector3 m_Velocity;
-        public Vector3 Velocity
-        {
-            get => m_Velocity;
-            set => m_Velocity = value;
-        }
-
-        public bool IsGrabed { get; set; } // グラッブ中かどうかのフラグ
-
         private Rigidbody2D m_Rigidbody2D;
-        private IDisposable m_HasBeenGrappledHandler;
-        private UseRefCounter m_HasBeenGrappled = new(); // グラッブ ~ 地面に設置までの参照カウンター
+
+        // IGrabbable実装
+        public bool IsGrabbed => m_CurrentGrabber != null;
+        public IGrabber CurrentGrabber => m_CurrentGrabber;
+        public Rigidbody2D Rigidbody => m_Rigidbody2D;
+        public GameObject GrabbableObject => gameObject;
+
+        private IGrabber m_CurrentGrabber;
 
         private void Awake()
         {
@@ -34,65 +30,52 @@ namespace InGame.Gimmick
             m_Rigidbody2D = GetComponent<Rigidbody2D>();
         }
 
-        public void GrapStart(object grabber)
+        public void OnGrabbed(IGrabber grabber)
         {
+            if (m_CurrentGrabber != null)
+            {
+                // 既に誰かに掴まれている場合は先に解放
+                OnReleased(m_CurrentGrabber);
+            }
+
+            m_CurrentGrabber = grabber;
             SetGrabLayer(Layers.GrabObject);
-        }
-        public void Grap(object grabber)
-        {
-            // IGrabberインターフェースを持つ場合のみドラッグ座標取得
-            if (grabber is InGame.IGrabber iGrabber)
-            {
-                Vector2 dragPos;
-                if (iGrabber.GetDrag(out dragPos))
-                {
-                    // カメラからワールド座標に変換
-                    Vector3 worldPos = Camera.main.ScreenToWorldPoint(new UnityEngine.Vector3(dragPos.x, dragPos.y, 0f));
-                    worldPos.z = transform.position.z;
-                    transform.position = worldPos;
 
-                }
+            // 掴まれている間は物理演算を一時的に調整
+            if (m_Rigidbody2D != null)
+            {
+                m_Rigidbody2D.gravityScale = 0f;
             }
 
-            if (!m_HasBeenGrappled.IsUsed)
-            {
-                m_HasBeenGrappledHandler = m_HasBeenGrappled.Use();
-                m_DisposableGroup.Add(Disposable.Create(() => m_HasBeenGrappledHandler.Dispose()));
-            }
+            AppLogger.Log($"Box grabbed by {grabber.GrabberObject.name}");
         }
 
-        public void GrapEnd(object grabber)
+        public void OnReleased(IGrabber grabber)
         {
-            SetGrabLayer(Layers.Default);
-        }
+            if (m_CurrentGrabber != grabber) return;
 
-        private void FixedUpdate()
-        {
-            if (m_Rigidbody2D == null)
+            m_CurrentGrabber = null;
+            RestoreLayer();
+
+            // 物理演算を元に戻す
+            if (m_Rigidbody2D != null)
             {
-                return;
+                m_Rigidbody2D.gravityScale = 1f;
             }
 
-            AppLogger.Log($"Box FixedUpdate: {IsGrabed}, HasBeenGrappled Count: {m_HasBeenGrappled.Count}");
-
-            if (IsGrabed) // 念のためグラッブ中は早期return
-            {
-                return;
-            }
-
-            m_Rigidbody2D.linearVelocity += new Vector2(0f, -9.81f) * Time.fixedDeltaTime;
-            Velocity = m_Rigidbody2D.linearVelocity;
-            AppLogger.Log($"Box Velocity: {Velocity}");
+            AppLogger.Log($"Box released by {grabber.GrabberObject.name}");
         }
 
-        public void TakeDamage(int amount)
+        public void TakeDamage(int amount, float impactVelocity)
         {
-            if (Velocity.magnitude <= m_DamageVelocityThreshold)
+            if (impactVelocity < m_DamageVelocityThreshold)
             {
                 return;
             }
 
             m_CurrentHP -= amount;
+            AppLogger.Log($"Box took {amount} damage. HP: {m_CurrentHP}/{m_MaxHP}");
+
             if (m_CurrentHP <= 0)
             {
                 DestroyBox();
@@ -129,14 +112,14 @@ namespace InGame.Gimmick
             }
             Deactivate();
         }
+
         // 衝突時のダメージ判定
         private void OnCollisionEnter2D(Collision2D collision)
         {
-            TakeDamage(1);
-
-            if (!IsGrabed)
+            if (!IsGrabbed && m_Rigidbody2D != null)
             {
-                m_HasBeenGrappledHandler?.Dispose();
+                float impactVelocity = m_Rigidbody2D.linearVelocity.magnitude;
+                TakeDamage(1, impactVelocity);
             }
         }
     }

@@ -1,22 +1,24 @@
 using InGame.Manager;
+using InGame.Entity;
 using UnityEngine;
 
 namespace InGame.Player
 {
-    public class PlayerCaptureModule : MonoBehaviour, IPlayerModule
+    public class PlayerCaptureModule : PlayerModuleBase
     {
         private PlayerInputModule m_PlayerInputModule;
 
-        public void Setup(PlayerController player)
+        public override void Setup(EntityController controller)
         {
-            player.GetModule(out m_PlayerInputModule);
+            base.Setup(controller);
+            m_PlayerController.TryGetModule(out m_PlayerInputModule);
         }
 
-        public void StartModule()
+        public override void StartModule()
         {
         }
 
-        public void UpdateModule()
+        public override void UpdateModule()
         {
             if (m_PlayerInputModule.GetClickedObject2D(out GameObject clickedObject))
             {
@@ -31,12 +33,12 @@ namespace InGame.Player
             }
         }
 
-        public void FixedUpdateModule()
+        public override void FixedUpdateModule()
         {
             // 物理演算関連の更新があればここに記述
         }
 
-        public void DestroyModule()
+        public override void DestroyModule()
         {
             // クリーンアップ処理があればここに記述
         }

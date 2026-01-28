@@ -633,11 +633,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.InGame.Enemy.EnemyThrowModule
   m_SearchRadius: 1
   m_PlayerSearchRadius: 10
-  m_ThrowSpeed: 1.5
-  m_LiftHeight: 2
   m_ThrowArcHeight: 1.35
+  m_LiftHeight: 2
   m_LiftTime: 1
   m_ThrowCooldown: 2
+  m_SpeedMultiplier: 2
 --- !u!50 &809056840
 Rigidbody2D:
   serializedVersion: 5
@@ -957,6 +957,9 @@ MonoBehaviour:
   m_SwipeIntensityMultiplier: 2
   m_SwipeIntensityMin: 1
   m_SwipeIntensityMax: 5
+  m_JointMaxForce: 1000
+  m_JointFrequency: 2
+  m_JointDampingRatio: 0.7
 --- !u!114 &1006647529
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -10,19 +10,67 @@ namespace InGame.Gimmick
         void Deactivate();
     }
 
+    /// <summary>
+    /// 掴む側（Player, Enemy等）のインターフェース
+    /// </summary>
+    public interface IGrabber
+    {
+        /// <summary>
+        /// 掴む側の位置を取得
+        /// </summary>
+        Vector3 GrabberPosition { get; }
+
+        /// <summary>
+        /// 掴む側のGameObject
+        /// </summary>
+        GameObject GrabberObject { get; }
+    }
+
+    /// <summary>
+    /// 掴まれる側（Box等）のインターフェース
+    /// 状態管理と通知のみを担当し、物理制御はGrabber側で行う
+    /// </summary>
     public interface IGrabbable
     {
+        /// <summary>
+        /// 掴むポイントの位置
+        /// </summary>
         Vector3 GetGrapplePoint();
-        void GrapStart(object grabber);
-        void Grap(object grabber);
-        void GrapEnd(object grabber);
-        Vector3 Velocity { get; set; }
-        bool IsGrabed { get; set; }
+
+        /// <summary>
+        /// 掴まれ開始時のコールバック
+        /// </summary>
+        void OnGrabbed(IGrabber grabber);
+
+        /// <summary>
+        /// 掴まれ終了時のコールバック
+        /// </summary>
+        void OnReleased(IGrabber grabber);
+
+        /// <summary>
+        /// 現在掴まれているかどうか
+        /// </summary>
+        bool IsGrabbed { get; }
+
+        /// <summary>
+        /// 現在掴んでいるGrabber（nullなら掴まれていない）
+        /// </summary>
+        IGrabber CurrentGrabber { get; }
+
+        /// <summary>
+        /// Rigidbody2Dへのアクセス（物理制御用）
+        /// </summary>
+        Rigidbody2D Rigidbody { get; }
+
+        /// <summary>
+        /// 掴まれているオブジェクトのGameObject
+        /// </summary>
+        GameObject GrabbableObject { get; }
     }
 
     public interface IDamageable
     {
-        void TakeDamage(int amount);
+        void TakeDamage(int amount, float impactVelocity);
     }
 
     public interface ICapturable

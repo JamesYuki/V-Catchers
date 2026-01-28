@@ -1,7 +1,9 @@
 using UnityEngine;
+using InGame.Entity;
+
 namespace InGame.Player
 {
-    public class PlayerMovementModule : MonoBehaviour, IPlayerModule
+    public class PlayerMovementModule : PlayerModuleBase
     {
         private Rigidbody2D m_Rigidbody2D;
         private PlayerInputModule m_PlayerInputModule;
@@ -17,18 +19,18 @@ namespace InGame.Player
         private GroundChecker m_GroundChecker;
         private float m_MoveInput = 0f;
 
-        public void Setup(PlayerController playerController)
+        public override void Setup(EntityController controller)
         {
-            m_Rigidbody2D = playerController.GetComponent<Rigidbody2D>();
-            playerController.GetModule(out m_PlayerInputModule);
+            base.Setup(controller);
+            m_Rigidbody2D = m_PlayerController.GetComponent<Rigidbody2D>();
+            m_PlayerController.TryGetModule(out m_PlayerInputModule);
         }
 
-        public void StartModule()
+        public override void StartModule()
         {
-
         }
 
-        public void UpdateModule()
+        public override void UpdateModule()
         {
             m_MoveInput = m_PlayerInputModule.GetMove().x;
 
@@ -38,11 +40,12 @@ namespace InGame.Player
             }
         }
 
-        public void FixedUpdateModule()
+        public override void FixedUpdateModule()
         {
             m_Rigidbody2D.linearVelocity = new Vector2(m_MoveInput * m_Speed, m_Rigidbody2D.linearVelocity.y);
         }
-        public void DestroyModule()
+
+        public override void DestroyModule()
         {
             m_Rigidbody2D = null;
         }

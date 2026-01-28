@@ -1,10 +1,11 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using InGame.Entity;
 
 namespace InGame.Player
 {
-    public class PlayerInputModule : MonoBehaviour, IPlayerModule
+    public class PlayerInputModule : PlayerModuleBase
     {
         private InputSystem_Actions m_InputActions;
         private Camera m_MainCamera;
@@ -12,26 +13,27 @@ namespace InGame.Player
         [SerializeField, Header("マウス操作を有効にするか")]
         private bool m_EnableMouse = true;
 
-        public void Setup(PlayerController playerController)
+        public override void Setup(EntityController controller)
         {
+            base.Setup(controller);
             m_InputActions = new InputSystem_Actions();
         }
 
-        public void StartModule()
+        public override void StartModule()
         {
             m_InputActions.Enable();
             m_MainCamera = Camera.main;
         }
 
-        public void UpdateModule()
+        public override void UpdateModule()
         {
         }
 
-        public void FixedUpdateModule()
+        public override void FixedUpdateModule()
         {
         }
 
-        public void DestroyModule()
+        public override void DestroyModule()
         {
             m_InputActions.Disable();
             m_MainCamera = null;
