@@ -32,16 +32,34 @@ namespace InGame.Player
 
         public override void UpdateModule()
         {
+            // 行動不可状態なら移動入力を無視
+            if (!m_PlayerController.CanPerformAction(Entity.ActionCategory.Movement))
+            {
+                m_MoveInput = 0f;
+                return;
+            }
+
             m_MoveInput = m_PlayerInputModule.GetMove().x;
 
-            if (m_PlayerInputModule.GetJump() && m_GroundChecker != null && m_GroundChecker.IsGrounded)
+            if (m_PlayerController.CanPerformAction(Entity.ActionCategory.Jump))
             {
-                m_Rigidbody2D.AddForce(Vector2.up * m_JumpForce, ForceMode2D.Impulse);
+                if (m_PlayerInputModule.GetJump() && m_GroundChecker != null && m_GroundChecker.IsGrounded)
+                {
+                    m_Rigidbody2D.AddForce(Vector2.up * m_JumpForce, ForceMode2D.Impulse);
+                }
             }
         }
 
         public override void FixedUpdateModule()
         {
+            // 死亡状態でも物理は動かす（倒れるアニメーション用）
+            if (!m_PlayerController.CanPerformAction(Entity.ActionCategory.Movement))
+            {
+                // 横移動だけ止める
+                m_Rigidbody2D.linearVelocity = new Vector2(0f, m_Rigidbody2D.linearVelocity.y);
+                return;
+            }
+
             m_Rigidbody2D.linearVelocity = new Vector2(m_MoveInput * m_Speed, m_Rigidbody2D.linearVelocity.y);
         }
 

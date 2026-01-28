@@ -200,7 +200,9 @@ namespace InGame.Player
         /// </summary>
         private void OnDeathProcess()
         {
-            // ゲームオーバー処理（必要に応じてGameManagerなどに通知）
+            // ステートマシンを死亡状態に
+            m_PlayerController?.OnDeath();
+
             Debug.Log("[PlayerHealthModule] Player has died!");
             
             // TODO: GameManagerにゲームオーバーを通知
@@ -213,6 +215,7 @@ namespace InGame.Player
         public void ResetHealth()
         {
             InitializeHealth();
+            m_PlayerController?.OnRespawn();
             OnHealthChanged?.Invoke(m_CurrentHealth, MaxHealth);
         }
     }

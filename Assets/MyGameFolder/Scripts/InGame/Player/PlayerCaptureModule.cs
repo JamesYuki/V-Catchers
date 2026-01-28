@@ -20,6 +20,12 @@ namespace InGame.Player
 
         public override void UpdateModule()
         {
+            // 行動不可状態ならスキップ
+            if (!m_PlayerController.CanPerformAction(ActionCategory.Interact))
+            {
+                return;
+            }
+
             if (m_PlayerInputModule.GetClickedObject2D(out GameObject clickedObject))
             {
                 AppLogger.Log("Clicked on object: " + clickedObject.name);

@@ -121,6 +121,18 @@ namespace InGame.Enemy
         {
             if (m_EnemyController == null) return;
 
+            // 行動不可状態なら投擲行動をスキップ
+            if (!m_EnemyController.CanPerformAction(Entity.ActionCategory.Throw))
+            {
+                // 掴み中なら強制解放
+                if (m_CurrentGrabbable != null)
+                {
+                    m_CurrentGrabbable.OnReleased(m_EnemyController);
+                    m_CurrentGrabbable = null;
+                }
+                return;
+            }
+
             // プレイヤー探索
             if (m_PlayerTransform == null)
             {

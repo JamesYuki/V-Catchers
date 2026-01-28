@@ -60,6 +60,17 @@ namespace InGame.Player
 
         public override void UpdateModule()
         {
+            // 行動不可状態なら掴み操作をスキップ
+            if (!m_PlayerController.CanPerformAction(Entity.ActionCategory.Grab))
+            {
+                // 掴み中なら強制解放
+                if (m_IsDragging)
+                {
+                    ForceRelease();
+                }
+                return;
+            }
+
             if (m_PlayerInputModule.GetDrag(out Vector2 dragPos))
             {
                 if (!m_IsDragging)
@@ -78,6 +89,28 @@ namespace InGame.Player
                     OnDragEnd();
                 }
             }
+        }
+
+        /// <summary>
+        /// 掴みを強制解放（死亡時など）
+        /// </summary>
+        private void ForceRelease()
+        {
+            if (m_CurrentTargetJoint != null)
+            {
+                m_CurrentTargetJoint.enabled = false;
+                m_CurrentTargetJoint = null;
+            }
+
+            if (m_CurrentGrabTarget != null)
+            {
+                m_CurrentGrabTarget.OnReleased(m_PlayerController);
+                m_CurrentGrabTarget = null;
+            }
+
+            m_IsDragging = false;
+            m_DragPosition = null;
+            m_LastDragPosition = null;
         }
 
         private void OnDragStart(Vector2 dragPos)

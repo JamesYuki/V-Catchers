@@ -173,6 +173,9 @@ namespace InGame.Enemy
         /// </summary>
         private void OnDeathProcess()
         {
+            // ステートマシンを死亡状態に
+            m_EnemyController?.OnDeath();
+
             Debug.Log($"[EnemyHealthModule] {gameObject.name} has died!");
 
             // TODO: スコア加算、ドロップアイテム生成など
@@ -198,6 +201,7 @@ namespace InGame.Enemy
         public void ResetHealth()
         {
             InitializeHealth();
+            m_EnemyController?.OnRespawn();
             if (m_SpriteRenderer != null)
             {
                 m_SpriteRenderer.color = m_OriginalColor;
