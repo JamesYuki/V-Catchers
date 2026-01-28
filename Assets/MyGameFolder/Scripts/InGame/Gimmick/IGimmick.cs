@@ -68,11 +68,6 @@ namespace InGame.Gimmick
         GameObject GrabbableObject { get; }
     }
 
-    public interface IDamageable
-    {
-        void TakeDamage(int amount, float impactVelocity);
-    }
-
     public interface ICapturable
     {
         void Capture(out Virus virus);

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1315387338118028973}
   - component: {fileID: 6136291798826715485}
   - component: {fileID: 3486334057942529485}
+  - component: {fileID: 1196572345879386387}
   m_Layer: 0
   m_Name: Square
   m_TagString: Untagged
@@ -179,10 +180,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 368ff0e79393286419a2f84c68378287, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InGame.Gimmick.Box
-  m_MaxHP: 3
+  m_MaxHP: 9999
   m_DamageVelocityThreshold: 10
-  m_Velocity: {x: 0, y: 0, z: 0}
-  IsGrabed: 0
   m_SpawnerGimmickPrefab: {fileID: 8032386224056101293, guid: dd1cb8f045f786146a67096438ed0849, type: 3}
   m_SpawnCount: 12
   m_SpawnForce: 1
+--- !u!114 &1196572345879386387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5026130254056590601}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a4873926860c4464885cb980a56399f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InGame.Entity.ProjectileDamageDealer
+  m_BaseDamage: 1
+  m_DamageCondition: {fileID: 11400000, guid: 9c8846b806535ed48b1e25207e5d1041, type: 2}
+  m_TargetLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_IgnoreSelf: 1
+  m_IsActive: 1
+  m_DamageCooldown: 0.5

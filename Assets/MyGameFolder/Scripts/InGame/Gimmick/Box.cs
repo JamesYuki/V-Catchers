@@ -1,6 +1,7 @@
 using UnityEngine;
 using R3;
 using System;
+using InGame.Entity;
 
 namespace InGame.Gimmick
 {
@@ -21,6 +22,12 @@ namespace InGame.Gimmick
         public IGrabber CurrentGrabber => m_CurrentGrabber;
         public Rigidbody2D Rigidbody => m_Rigidbody2D;
         public GameObject GrabbableObject => gameObject;
+
+        // IDamageable実装
+        public int CurrentHealth => m_CurrentHP;
+        public int MaxHealth => m_MaxHP;
+        public bool IsAlive => m_CurrentHP > 0;
+        public float HealthRatio => m_MaxHP > 0 ? (float)m_CurrentHP / m_MaxHP : 0f;
 
         private IGrabber m_CurrentGrabber;
 
@@ -66,20 +73,33 @@ namespace InGame.Gimmick
             AppLogger.Log($"Box released by {grabber.GrabberObject.name}");
         }
 
-        public void TakeDamage(int amount, float impactVelocity)
+        /// <summary>
+        /// IDamageable実装 - ダメージを受ける
+        /// </summary>
+        public void TakeDamage(int damage, GameObject damageSource = null)
+        {
+            // 衝突速度による判定が必要な場合はDamageReceiverを使用
+            // ここでは直接ダメージを受け付ける
+            m_CurrentHP -= damage;
+            AppLogger.Log($"Box took {damage} damage. HP: {m_CurrentHP}/{m_MaxHP}");
+
+            if (m_CurrentHP <= 0)
+            {
+                DestroyBox();
+            }
+        }
+
+        /// <summary>
+        /// 速度付きダメージ処理（衝突時に使用）
+        /// </summary>
+        public void TakeDamageWithVelocity(int amount, float impactVelocity)
         {
             if (impactVelocity < m_DamageVelocityThreshold)
             {
                 return;
             }
 
-            m_CurrentHP -= amount;
-            AppLogger.Log($"Box took {amount} damage. HP: {m_CurrentHP}/{m_MaxHP}");
-
-            if (m_CurrentHP <= 0)
-            {
-                DestroyBox();
-            }
+            TakeDamage(amount);
         }
 
         [SerializeField]
@@ -119,7 +139,7 @@ namespace InGame.Gimmick
             if (!IsGrabbed && m_Rigidbody2D != null)
             {
                 float impactVelocity = m_Rigidbody2D.linearVelocity.magnitude;
-                TakeDamage(1, impactVelocity);
+                TakeDamageWithVelocity(1, impactVelocity);
             }
         }
     }

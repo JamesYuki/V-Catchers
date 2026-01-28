@@ -10,15 +10,22 @@ namespace InGame.Enemy
     /// <summary>
     /// 敵が物を投げる機能を担当するモジュール
     /// 掴む側（Grabber）として物理制御を行う
+    /// 
+    /// 責務：
+    /// - 近くのIGrabbableを探索
+    /// - 掴み条件の判定
+    /// - 持ち上げ→投擲の一連動作
     /// </summary>
     public class EnemyThrowModule : EnemyModuleBase
     {
+        [Header("探索設定")]
         [SerializeField]
         private float m_SearchRadius = 10f;
 
         [SerializeField]
         private float m_PlayerSearchRadius = 10f;
 
+        [Header("投擲設定")]
         [SerializeField, Tooltip("投げる山なりの高さ（放物線の頂点高さ）")]
         private float m_ThrowArcHeight = 3f;
 
@@ -33,6 +40,23 @@ namespace InGame.Enemy
 
         [SerializeField, Tooltip("速度倍率（軌道は同じまま到達時間を短縮）"), Range(0.5f, 3f)]
         private float m_SpeedMultiplier = 1f;
+
+        [Header("掴み条件")]
+        [SerializeField, Tooltip("掴み条件の設定（ScriptableObject）")]
+        private GrabConditionSettings m_GrabCondition;
+
+        [Header("フォールバック条件（GrabConditionSettingsがない場合）")]
+        [SerializeField, Tooltip("この速度以上のオブジェクトは掴めない")]
+        private float m_MaxGrabbableVelocity = 3f;
+
+        [SerializeField, Tooltip("空中のオブジェクトは掴めない")]
+        private bool m_RequireGrounded = true;
+
+        [SerializeField, Tooltip("接地判定の距離")]
+        private float m_GroundCheckDistance = 0.3f;
+
+        [SerializeField, Tooltip("地面レイヤー")]
+        private LayerMask m_GroundLayers = ~0;
 
         private Transform m_PlayerTransform;
         private float m_NextCanThrowTime = 0f;
@@ -144,8 +168,8 @@ namespace InGame.Enemy
                 var grabbable = col.GetComponent<IGrabbable>();
                 if (grabbable == null) continue;
 
-                // 既に誰かに掴まれている場合はスキップ
-                if (grabbable.IsGrabbed) continue;
+                // 掴み条件をチェック
+                if (!CanGrabTarget(grabbable)) continue;
 
                 float dist = Vector2.Distance(enemyPos2D, col.transform.position);
                 if (dist < minDist)
@@ -156,6 +180,89 @@ namespace InGame.Enemy
             }
 
             return nearest;
+        }
+
+        /// <summary>
+        /// 対象を掴めるかどうか判定
+        /// </summary>
+        private bool CanGrabTarget(IGrabbable grabbable)
+        {
+            if (grabbable == null) return false;
+
+            // 既に掴まれている
+            if (grabbable.IsGrabbed) return false;
+
+            // GrabConditionSettingsがあればそれを使用
+            if (m_GrabCondition != null)
+            {
+                return m_GrabCondition.CanGrab(grabbable, m_EnemyController);
+            }
+
+            // フォールバック：インライン条件チェック
+            return CheckInlineGrabConditions(grabbable);
+        }
+
+        /// <summary>
+        /// インラインの掴み条件チェック（GrabConditionSettingsがない場合）
+        /// </summary>
+        private bool CheckInlineGrabConditions(IGrabbable grabbable)
+        {
+            var rb = grabbable.Rigidbody;
+            var obj = grabbable.GrabbableObject;
+
+            if (obj == null) return false;
+
+            // 速度チェック
+            if (m_MaxGrabbableVelocity > 0f && rb != null)
+            {
+                if (rb.linearVelocity.magnitude > m_MaxGrabbableVelocity)
+                {
+                    return false;
+                }
+            }
+
+            // 接地チェック
+            if (m_RequireGrounded)
+            {
+                if (!IsGrounded(obj, rb))
+                {
+                    return false;
+                }
+            }
+
+            // IGrabbableConditionProviderがあればその条件もチェック
+            var conditionProvider = obj.GetComponent<IGrabbableConditionProvider>();
+            if (conditionProvider != null && !conditionProvider.CanBeGrabbed)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 接地判定
+        /// </summary>
+        private bool IsGrounded(GameObject obj, Rigidbody2D rb)
+        {
+            if (obj == null) return false;
+
+            // 落下中は掴めない
+            if (rb != null && rb.linearVelocity.y < -1f)
+            {
+                return false;
+            }
+
+            // レイキャストで地面判定
+            var collider = obj.GetComponent<Collider2D>();
+            if (collider != null)
+            {
+                Vector2 origin = (Vector2)obj.transform.position + Vector2.down * (collider.bounds.extents.y);
+                RaycastHit2D hit = Physics2D.Raycast(origin, Vector2.down, m_GroundCheckDistance, m_GroundLayers);
+                return hit.collider != null;
+            }
+
+            return true;
         }
 
         private async void ThrowAtPlayer(IGrabbable grabbable)
