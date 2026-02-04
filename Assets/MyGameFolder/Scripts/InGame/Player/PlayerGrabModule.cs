@@ -16,6 +16,7 @@ namespace InGame.Player
         private IGrabbable m_CurrentGrabTarget = null;
         private TargetJoint2D m_CurrentTargetJoint = null;
         private LineRenderer m_ConnectLine = null;
+        private float m_CurrentLiftEase = 1f; // 現在の持ち上げやすさ（0.0〜1.0+）
 
         private bool m_IsDragging = false;
         private Vector2? m_DragPosition = null;
@@ -50,6 +51,15 @@ namespace InGame.Player
 
         [SerializeField, Header("TargetJoint2Dの減衰比")]
         private float m_JointDampingRatio = 0.7f;
+
+        [SerializeField, Header("重い物体用のジョイント最大力（持ち上げやすさ〄0時）")]
+        private float m_JointMaxForceHeavy = 200f;
+
+        [SerializeField, Header("重い物体用のジョイント周波数（持ち上げやすさ〄0時）")]
+        private float m_JointFrequencyHeavy = 0.5f;
+
+        [SerializeField, Header("持ち上げに必要な最低持ち上げやすさ（これ以下だと持ち上げ不可）")]
+        private float m_MinLiftEaseThreshold = 0.3f;
 
         public override void Setup(EntityController controller)
         {
@@ -129,18 +139,30 @@ namespace InGame.Player
             var grabbable = hit.GetComponent<IGrabbable>();
             if (grabbable == null) return;
 
-            // 既に誰かに掴まれている場合はスキップ
+            // 既に誰かに掘まれている場合はスキップ
             if (grabbable.IsGrabbed) return;
 
-            // 重さチェック - プレイヤーのレベルに応じた持ち上げ力で判定
+            // 持ち上げやすさを計算（グラデーション）
             var levelManager = ServiceLocator.Service<LevelManager>();
-            if (levelManager != null && !levelManager.CanLift(grabbable.Weight))
+            if (levelManager != null)
             {
-                AppLogger.Log($"Cannot lift object: weight {grabbable.Weight} > lift capacity {levelManager.CurrentLiftCapacity}");
-                return;
+                m_CurrentLiftEase = levelManager.GetLiftEase(grabbable.Weight);
+
+                // 最低閾値を下回る場合は持ち上げ不可
+                if (m_CurrentLiftEase < m_MinLiftEaseThreshold)
+                {
+                    AppLogger.Log($"Cannot lift object: lift ease {m_CurrentLiftEase:F2} < threshold {m_MinLiftEaseThreshold:F2} (weight: {grabbable.Weight})");
+                    return;
+                }
+
+                AppLogger.Log($"Lift ease: {m_CurrentLiftEase:F2} (weight: {grabbable.Weight}, capacity: {levelManager.CurrentLiftCapacity})");
+            }
+            else
+            {
+                m_CurrentLiftEase = 1f;
             }
 
-            float distance = Vector2.Distance(m_PlayerController.transform.position, hit.transform.position);;
+            float distance = Vector2.Distance(m_PlayerController.transform.position, hit.transform.position); ;
             bool isAbovePlayer = hit.transform.position.y > m_PlayerController.transform.position.y;
 
             if (distance > m_GrabRange || !isAbovePlayer)
@@ -170,8 +192,13 @@ namespace InGame.Player
             m_CurrentTargetJoint.enabled = true;
             m_CurrentTargetJoint.autoConfigureTarget = false;
             m_CurrentTargetJoint.target = targetObj.transform.position;
-            m_CurrentTargetJoint.maxForce = m_JointMaxForce;
-            m_CurrentTargetJoint.frequency = m_JointFrequency;
+
+            // 持ち上げやすさに応じてジョイントパラメータを調整
+            float liftEaseClamped = Mathf.Clamp01(m_CurrentLiftEase);
+
+            // 持ち上げやすさが高いほど、maxForceとfrequencyが高くなる
+            m_CurrentTargetJoint.maxForce = Mathf.Lerp(m_JointMaxForceHeavy, m_JointMaxForce, liftEaseClamped);
+            m_CurrentTargetJoint.frequency = Mathf.Lerp(m_JointFrequencyHeavy, m_JointFrequency, liftEaseClamped);
             m_CurrentTargetJoint.dampingRatio = m_JointDampingRatio;
         }
 

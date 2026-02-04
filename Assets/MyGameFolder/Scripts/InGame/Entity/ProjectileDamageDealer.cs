@@ -42,6 +42,13 @@ namespace InGame.Entity
         [SerializeField, Tooltip("何かに衝突したら投げた人への免疫を解除する")]
         private bool m_ClearImmunityOnImpact = true;
 
+        [Header("動いていない時の設定")]
+        [SerializeField, Tooltip("オブジェクトが動いていない時はダメージを与えない")]
+        private bool m_IgnoreWhenNotMoving = true;
+
+        [SerializeField, Tooltip("動いていないと判定する速度の閾値")]
+        private float m_MinMovingSpeedThreshold = 0.5f;
+
         private Rigidbody2D m_Rigidbody;
         private IGrabbable m_Grabbable;
 
@@ -186,6 +193,16 @@ namespace InGame.Entity
         }
 
         /// <summary>
+        /// オブジェクトが動いているかどうかを判定
+        /// </summary>
+        private bool IsMoving()
+        {
+            if (m_Rigidbody == null) return false;
+
+            return m_Rigidbody.linearVelocity.magnitude >= m_MinMovingSpeedThreshold;
+        }
+
+        /// <summary>
         /// ダメージを与えることを試みる
         /// </summary>
         private bool TryDealDamage(GameObject target, Collision2D collision)
@@ -196,6 +213,13 @@ namespace InGame.Entity
             // 投げた人への免疫チェック
             if (IsThrowerImmune(target))
             {
+                return false;
+            }
+
+            // オブジェクトが動いていない場合のチェック
+            if (m_IgnoreWhenNotMoving && !IsMoving())
+            {
+                AppLogger.Log($"[ProjectileDamageDealer] Ignoring damage from {target.name} - object is not moving");
                 return false;
             }
 

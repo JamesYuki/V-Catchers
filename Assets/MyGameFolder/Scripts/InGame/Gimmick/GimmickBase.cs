@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace InGame.Gimmick
@@ -39,11 +40,24 @@ namespace InGame.Gimmick
         /// </summary>
         public void RestoreLayer()
         {
-            if (m_OriginalLayer >= 0)
+            if (m_OriginalLayer < 0) return;
+
+            // オブジェクトが既に破棄されている場合、gameObjectへのアクセスは例外を投げる可能性がある。
+            // UnityEngine.Object の比較は破棄済みオブジェクトに対しても安全に null 判定ができるため先にチェックする。
+            if (this == null)
+            {
+                m_OriginalLayer = -1;
+                return;
+            }
+
+            try
             {
                 gameObject.layer = m_OriginalLayer;
-                m_OriginalLayer = -1;
             }
+            catch (Exception)
+            {
+            }
+            m_OriginalLayer = -1;
         }
 
         public virtual Vector3 GetGrapplePoint()

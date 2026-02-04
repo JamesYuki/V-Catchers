@@ -17,7 +17,20 @@ namespace InGame.Gimmick
 
         [SerializeField, Header("重さ設定")]
         [Tooltip("オブジェクトの重さ（持ち上げに必要なレベルの指標）")]
-        private int m_Weight = 1;
+        private float m_Weight = 1f;
+
+        [SerializeField, Tooltip("物理的な質量（Rigidbody2Dのmassに反映）")]
+        private float m_PhysicsMass = 5f;
+
+        [SerializeField]
+        private Vector3 m_Velocity;
+        public Vector3 Velocity
+        {
+            get => m_Velocity;
+            set => m_Velocity = value;
+        }
+
+        public bool IsGrabed { get; set; } // グラッブ中かどうかのフラグ
 
         private Rigidbody2D m_Rigidbody2D;
 
@@ -26,7 +39,8 @@ namespace InGame.Gimmick
         public IGrabber CurrentGrabber => m_CurrentGrabber;
         public Rigidbody2D Rigidbody => m_Rigidbody2D;
         public GameObject GrabbableObject => gameObject;
-        public int Weight => m_Weight;
+        public float Weight => m_Weight;
+        public float PhysicsMass => m_PhysicsMass * Weight;
 
         // IDamageable実装
         public int CurrentHealth => m_CurrentHP;
@@ -35,11 +49,19 @@ namespace InGame.Gimmick
         public float HealthRatio => m_MaxHP > 0 ? (float)m_CurrentHP / m_MaxHP : 0f;
 
         private IGrabber m_CurrentGrabber;
+        private IDisposable m_HasBeenGrappledHandler;
+        private UseRefCounter m_HasBeenGrappled = new(); // グラッブ ~ 地面に設置までの参照カウンター
 
         private void Awake()
         {
             m_CurrentHP = m_MaxHP;
             m_Rigidbody2D = GetComponent<Rigidbody2D>();
+
+            // 物理的な質量をRigidbody2Dに反映
+            if (m_Rigidbody2D != null)
+            {
+                m_Rigidbody2D.mass = m_PhysicsMass;
+            }
         }
 
         public void OnGrabbed(IGrabber grabber)
@@ -51,12 +73,19 @@ namespace InGame.Gimmick
             }
 
             m_CurrentGrabber = grabber;
+            IsGrabed = true;
             SetGrabLayer(Layers.GrabObject);
 
             // 掴まれている間は物理演算を一時的に調整
             if (m_Rigidbody2D != null)
             {
                 m_Rigidbody2D.gravityScale = 0f;
+            }
+
+            if (!m_HasBeenGrappled.IsUsed)
+            {
+                m_HasBeenGrappledHandler = m_HasBeenGrappled.Use();
+                m_DisposableGroup.Add(Disposable.Create(() => m_HasBeenGrappledHandler?.Dispose()));
             }
 
             AppLogger.Log($"Box grabbed by {grabber.GrabberObject.name}");
@@ -67,6 +96,7 @@ namespace InGame.Gimmick
             if (m_CurrentGrabber != grabber) return;
 
             m_CurrentGrabber = null;
+            IsGrabed = false;
             RestoreLayer();
 
             // 物理演算を元に戻す
@@ -78,13 +108,30 @@ namespace InGame.Gimmick
             AppLogger.Log($"Box released by {grabber.GrabberObject.name}");
         }
 
+        private void FixedUpdate()
+        {
+            if (m_Rigidbody2D == null)
+            {
+                return;
+            }
+
+            AppLogger.Log($"Box FixedUpdate: {IsGrabed}, HasBeenGrappled Count: {m_HasBeenGrappled.Count}");
+
+            if (IsGrabed) // 念のためグラッブ中は早期return
+            {
+                return;
+            }
+
+            // Velocityを更新
+            Velocity = m_Rigidbody2D.linearVelocity;
+            AppLogger.Log($"Box Velocity: {Velocity}");
+        }
+
         /// <summary>
         /// IDamageable実装 - ダメージを受ける
         /// </summary>
         public void TakeDamage(int damage, GameObject damageSource = null)
         {
-            // 衝突速度による判定が必要な場合はDamageReceiverを使用
-            // ここでは直接ダメージを受け付ける
             m_CurrentHP -= damage;
             AppLogger.Log($"Box took {damage} damage. HP: {m_CurrentHP}/{m_MaxHP}");
 
@@ -101,9 +148,11 @@ namespace InGame.Gimmick
         {
             if (impactVelocity < m_DamageVelocityThreshold)
             {
+                AppLogger.Log($"Box damage blocked: impact velocity {impactVelocity:F2} < threshold {m_DamageVelocityThreshold:F2}");
                 return;
             }
 
+            AppLogger.Log($"Box taking damage: impact velocity {impactVelocity:F2} >= threshold {m_DamageVelocityThreshold:F2}");
             TakeDamage(amount);
         }
 
@@ -141,10 +190,16 @@ namespace InGame.Gimmick
         // 衝突時のダメージ判定
         private void OnCollisionEnter2D(Collision2D collision)
         {
-            if (!IsGrabbed && m_Rigidbody2D != null)
+            // relativeVelocityを使用して相対速度で判定（投げつけた時にも壊れるように）
+            float impactVelocity = collision.relativeVelocity.magnitude;
+
+            // レイヤーに関係なく、速度が十分な衝突で壊れる
+            AppLogger.Log($"Box collision with {collision.gameObject.name}, impact velocity: {impactVelocity:F2}");
+            TakeDamageWithVelocity(1, impactVelocity);
+
+            if (!IsGrabed)
             {
-                float impactVelocity = m_Rigidbody2D.linearVelocity.magnitude;
-                TakeDamageWithVelocity(1, impactVelocity);
+                m_HasBeenGrappledHandler?.Dispose();
             }
         }
     }

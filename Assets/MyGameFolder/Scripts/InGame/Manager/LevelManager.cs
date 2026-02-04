@@ -70,5 +70,26 @@ namespace InGame.Manager
             return CurrentLiftCapacity >= weight;
         }
 
+        /// <summary>
+        /// 指定した重さに対する持ち上げやすさを計算（グラデーション）
+        /// </summary>
+        /// <param name="weight">対象の重さ</param>
+        /// <returns>0.0〜1.0+の持ち上げやすさ（1.0で通常、それ以上で余裕あり、0に近いほど重い）</returns>
+        public float GetLiftEase(float weight)
+        {
+            if (weight <= 0f) return 1f;
+            return CurrentLiftCapacity / weight;
+        }
+
+        /// <summary>
+        /// 指定した重さを持ち上げられるかどうか判定（float版）
+        /// </summary>
+        /// <param name="weight">対象の重さ</param>
+        /// <returns>持ち上げ可能ならtrue</returns>
+        public bool CanLift(float weight)
+        {
+            return CurrentLiftCapacity >= weight;
+        }
+
     }
 }

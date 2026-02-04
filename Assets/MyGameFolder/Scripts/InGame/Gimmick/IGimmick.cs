@@ -70,7 +70,12 @@ namespace InGame.Gimmick
         /// <summary>
         /// オブジェクトの重さ（持ち上げに必要なレベルの指標）
         /// </summary>
-        int Weight { get; }
+        float Weight { get; }
+
+        /// <summary>
+        /// 物理的な質量（Rigidbody2Dのmass）
+        /// </summary>
+        float PhysicsMass { get; }
     }
 
     public interface ICapturable
