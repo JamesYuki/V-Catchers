@@ -23,6 +23,9 @@ namespace InGame.Gimmick
         private float m_PhysicsMass = 5f;
 
         [SerializeField]
+        private LayerMask m_DamageLayerMask;
+
+        [SerializeField]
         private Vector3 m_Velocity;
         public Vector3 Velocity
         {
@@ -190,11 +193,13 @@ namespace InGame.Gimmick
         // 衝突時のダメージ判定
         private void OnCollisionEnter2D(Collision2D collision)
         {
+            if (m_DamageLayerMask != (m_DamageLayerMask | (1 << collision.gameObject.layer)))
+            {
+                return;
+            }
+
             // relativeVelocityを使用して相対速度で判定（投げつけた時にも壊れるように）
             float impactVelocity = collision.relativeVelocity.magnitude;
-
-            // レイヤーに関係なく、速度が十分な衝突で壊れる
-            AppLogger.Log($"Box collision with {collision.gameObject.name}, impact velocity: {impactVelocity:F2}");
             TakeDamageWithVelocity(1, impactVelocity);
 
             if (!IsGrabed)
