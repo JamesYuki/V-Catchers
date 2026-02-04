@@ -15,6 +15,10 @@ namespace InGame.Gimmick
         [SerializeField]
         private float m_DamageVelocityThreshold = 10f;
 
+        [SerializeField, Header("重さ設定")]
+        [Tooltip("オブジェクトの重さ（持ち上げに必要なレベルの指標）")]
+        private int m_Weight = 1;
+
         private Rigidbody2D m_Rigidbody2D;
 
         // IGrabbable実装
@@ -22,6 +26,7 @@ namespace InGame.Gimmick
         public IGrabber CurrentGrabber => m_CurrentGrabber;
         public Rigidbody2D Rigidbody => m_Rigidbody2D;
         public GameObject GrabbableObject => gameObject;
+        public int Weight => m_Weight;
 
         // IDamageable実装
         public int CurrentHealth => m_CurrentHP;

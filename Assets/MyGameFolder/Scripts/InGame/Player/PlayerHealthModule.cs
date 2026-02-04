@@ -204,7 +204,7 @@ namespace InGame.Player
             m_PlayerController?.OnDeath();
 
             Debug.Log("[PlayerHealthModule] Player has died!");
-            
+
             // TODO: GameManagerにゲームオーバーを通知
             // ServiceLocator.Service<GameManager>().OnPlayerDeath();
         }

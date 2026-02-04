@@ -66,6 +66,11 @@ namespace InGame.Gimmick
         /// 掴まれているオブジェクトのGameObject
         /// </summary>
         GameObject GrabbableObject { get; }
+
+        /// <summary>
+        /// オブジェクトの重さ（持ち上げに必要なレベルの指標）
+        /// </summary>
+        int Weight { get; }
     }
 
     public interface ICapturable

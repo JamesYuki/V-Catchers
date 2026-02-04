@@ -1,6 +1,7 @@
 using UnityEngine;
 using InGame.Gimmick;
 using InGame.Entity;
+using InGame.Manager;
 
 namespace InGame.Player
 {
@@ -131,7 +132,15 @@ namespace InGame.Player
             // 既に誰かに掴まれている場合はスキップ
             if (grabbable.IsGrabbed) return;
 
-            float distance = Vector2.Distance(m_PlayerController.transform.position, hit.transform.position);
+            // 重さチェック - プレイヤーのレベルに応じた持ち上げ力で判定
+            var levelManager = ServiceLocator.Service<LevelManager>();
+            if (levelManager != null && !levelManager.CanLift(grabbable.Weight))
+            {
+                AppLogger.Log($"Cannot lift object: weight {grabbable.Weight} > lift capacity {levelManager.CurrentLiftCapacity}");
+                return;
+            }
+
+            float distance = Vector2.Distance(m_PlayerController.transform.position, hit.transform.position);;
             bool isAbovePlayer = hit.transform.position.y > m_PlayerController.transform.position.y;
 
             if (distance > m_GrabRange || !isAbovePlayer)

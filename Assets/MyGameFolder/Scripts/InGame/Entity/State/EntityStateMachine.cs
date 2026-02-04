@@ -141,7 +141,7 @@ namespace InGame.Entity
             if (m_CurrentState == newState) return;
 
             // 死亡状態からは復帰できない（ResetStateを使用）
-            if (m_CurrentState?.StateType == EntityStateType.Dead && 
+            if (m_CurrentState?.StateType == EntityStateType.Dead &&
                 newState.StateType != EntityStateType.Normal)
             {
                 return;

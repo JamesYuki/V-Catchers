@@ -44,8 +44,8 @@ namespace InGame.Entity
 
         private Rigidbody2D m_Rigidbody;
         private IGrabbable m_Grabbable;
-        
-        private System.Collections.Generic.Dictionary<GameObject, float> m_DamageTimestamps 
+
+        private System.Collections.Generic.Dictionary<GameObject, float> m_DamageTimestamps
             = new System.Collections.Generic.Dictionary<GameObject, float>();
 
         // 投げた人（免疫対象）の追跡
@@ -167,7 +167,7 @@ namespace InGame.Entity
             if (m_LastThrower == null) return false;
 
             // 対象が投げた人かどうか（親階層も確認）
-            bool isThrower = target == m_LastThrower || 
+            bool isThrower = target == m_LastThrower ||
                              target.transform.IsChildOf(m_LastThrower.transform) ||
                              (m_LastThrower.transform.IsChildOf(target.transform));
 

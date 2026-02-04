@@ -438,6 +438,14 @@ PrefabInstance:
       propertyPath: m_Lifetime
       value: 2222
       objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_MaxHP
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_DamageVelocityThreshold
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 5026130254056590601, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_Name
       value: Square (2)
@@ -869,7 +877,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.InGame.Enemy.EnemyController
   m_StateMachine:
-    m_CurrentState: 0
+    m_CurrentStateType: 0
 --- !u!4 &809056838
 Transform:
   m_ObjectHideFlags: 0
@@ -1187,7 +1195,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   m_StateMachine:
-    m_CurrentState: 0
+    m_CurrentStateType: 0
 --- !u!114 &1006647525
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1366,6 +1374,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc5435760bb412648824cb2a1df6f339, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InGame.Manager.LevelManager
+  m_BaseLiftCapacity: 1
+  m_LiftCapacityPerLevel: 1
 --- !u!4 &1106859489
 Transform:
   m_ObjectHideFlags: 0
@@ -1709,7 +1719,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_MaxHP
-      value: 9999
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_DamageVelocityThreshold
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 5026130254056590601, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_Name
@@ -1825,6 +1839,14 @@ PrefabInstance:
       propertyPath: m_Lifetime
       value: 2222
       objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_MaxHP
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_DamageVelocityThreshold
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 5026130254056590601, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_Name
       value: Square (3)
@@ -1917,17 +1939,53 @@ PrefabInstance:
       propertyPath: m_Lifetime
       value: 2222
       objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_MaxHP
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_Weight
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_DamageVelocityThreshold
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 5026130254056590601, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_Name
       value: Square (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 6373562519956726805, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373562519956726805, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_Color.g
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6373562519956726805, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_Color.r
+      value: 0.55405474
+      objectReference: {fileID: 0}
+    - target: {fileID: 6621772250091836063, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6621772250091836063, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6621772250091836063, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 6621772250091836063, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -15.37
+      value: -16.09
       objectReference: {fileID: 0}
     - target: {fileID: 6621772250091836063, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.37
+      value: -0.34
       objectReference: {fileID: 0}
     - target: {fileID: 6621772250091836063, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2474,6 +2532,14 @@ PrefabInstance:
     - target: {fileID: 2272323152595260102, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_Lifetime
       value: 2222
+      objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_MaxHP
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3486334057942529485, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
+      propertyPath: m_DamageVelocityThreshold
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 5026130254056590601, guid: ec96e9dad45814d46aa034a4f9adb242, type: 3}
       propertyPath: m_Name
